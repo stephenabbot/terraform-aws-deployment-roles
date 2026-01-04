@@ -21,43 +21,46 @@ Enables automated deployment through GitHub Actions using OIDC authentication wh
 ## Deployment Flow
 
 ### Phase 1: Local First Deployment
-```
+
+```text
 Developer    deploy.sh    verify-prereq.sh    AWS STS    GitHub API    Infrastructure
-    |            |              |              |           |               |
-    |--run------->|              |              |           |               |
-    |            |--call-------->|              |           |               |
-    |            |              |--check gh--->|           |               |
-    |            |              |--check aws-->|           |               |
-    |            |<--pass--------|              |           |               |
-    |            |--get-account---------------->|           |               |
-    |            |<--account-id-----------------|           |               |
-    |            |--get/set var-------------------------->|               |
-    |            |<--var updated---------------------------|               |
-    |            |--assume role---------------->|           |               |
-    |            |--deploy----------------------------------->|               |
-    |            |<--success-----------------------------------|               |
-    |<--done------|              |              |           |               |
+    |           |              |              |           |               |
+    |--run----->|              |              |           |               |
+    |           |--call------->|              |           |               |
+    |           |              |--check gh--->|           |               |
+    |           |              |--check aws-->|           |               |
+    |           |<--pass-------|              |           |               |
+    |           |--get-account--------------->|           |               |
+    |           |<--account-id----------------|           |               |
+    |           |--get/set var--------------------------->|               |
+    |           |<--var updated---------------------------|               |
+    |           |--assume role--------------->|           |               |
+    |           |--deploy-------------------------------->|               |
+    |           |<--success-------------------------------|               |
+    |<--done----|              |              |           |               |
 ```
 
 ### Phase 2: GitHub Actions Deployment
-```
-GH Workflow  deploy.sh    verify-prereq.sh    OIDC       Foundation     Infrastructure
-    |            |              |              |           Role            |
-    |--trigger--->|              |              |           |               |
-    |            |--call-------->|              |           |               |
-    |            |              |--check tools->|           |               |
-    |            |<--pass--------|              |           |               |
-    |--read var-->|              |              |           |               |
-    |--use OIDC------------------>|             |           |               |
-    |<--assume--------------------|------------>|           |               |
-    |            |--deploy with assumed role---------------->|               |
-    |            |<--success-----------------------------------|               |
-    |<--done------|              |              |           |               |
+
+```text
+GH Workflow  deploy.sh    verify-prereq.sh     OIDC       Foundation     Infrastructure
+    |             |              |               |           Role            |
+    |--trigger--->|              |               |           |               |
+    |             |--call------->|               |           |               |
+    |             |              |--check tools->|           |               |
+    |             |<--pass-------|               |           |               |
+    |--read var-->|              |               |           |               |
+    |--use OIDC----------------->|               |           |               |
+    |<--assume-------------------|-------------->|           |               |
+    |             |--deploy with assumed role--------------->|               |
+    |             |<--success--------------------------------|               |
+    |<--done------|              |               |           |               |
 ```
 
 ## How It Works
 
 ### Local Development Workflow
+
 1. Developer runs `./scripts/deploy.sh` with local AWS credentials
 2. Script automatically detects current AWS account ID from session
 3. Script manages GitHub repository variable `AWS_ACCOUNT_ID` (create/update/verify)
@@ -65,6 +68,7 @@ GH Workflow  deploy.sh    verify-prereq.sh    OIDC       Foundation     Infrastr
 5. GitHub Actions capability is now configured automatically
 
 ### GitHub Actions Workflow
+
 1. Workflow reads `vars.AWS_ACCOUNT_ID` to construct foundation deployment role ARN
 2. Uses OIDC to assume the foundation deployment role (trust relationship pre-configured)
 3. Runs identical deployment scripts with assumed role credentials
@@ -73,18 +77,21 @@ GH Workflow  deploy.sh    verify-prereq.sh    OIDC       Foundation     Infrastr
 ## Key Benefits
 
 ### Operational Excellence
+
 - **Local-First Pattern**: Always works locally before automation, ensuring reliable workflows
 - **Self-Configuring**: Automatically manages GitHub repository variables without manual setup
 - **Consistent Scripts**: Identical deployment logic locally and in CI/CD eliminates environment drift
 - **Self-Healing**: Automatically detects and corrects AWS account ID mismatches
 
 ### Security
+
 - **OIDC Authentication**: No long-lived credentials stored in GitHub secrets
 - **Least Privilege**: Uses foundation deployment role with scoped permissions
 - **Account Verification**: Ensures GitHub variables match actual AWS session
 - **Automated Trust**: Leverages pre-configured OIDC trust relationships
 
 ### Scalability
+
 - **Zero Manual Setup**: No per-repository GitHub configuration required
 - **Account Agnostic**: Automatically adapts to different AWS accounts
 - **Team Ready**: Works consistently across development teams
@@ -93,6 +100,7 @@ GH Workflow  deploy.sh    verify-prereq.sh    OIDC       Foundation     Infrastr
 ## Prerequisites
 
 The GitHub Actions integration requires:
+
 - Foundation infrastructure deployed via [foundation-terraform-bootstrap](https://github.com/stephenabbot/foundation-terraform-bootstrap)
 - GitHub CLI installed locally (automatically verified by prerequisite checks)
 - Local AWS credentials for initial deployment
@@ -101,6 +109,7 @@ The GitHub Actions integration requires:
 ## Workflow Triggers
 
 GitHub Actions workflows trigger on:
+
 - **Push to main branch**: Automatic deployment of infrastructure changes
 - **Pull requests**: Validation and planning without deployment
 - **Manual dispatch**: On-demand deployment through GitHub UI

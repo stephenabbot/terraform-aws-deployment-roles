@@ -1,0 +1,40 @@
+name: Validate Foundation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/terraform-deployment-roles-${{ vars.AWS_ACCOUNT_ID }}-us-east-1
+          aws-region: us-east-1
+          
+      - name: Test foundation parameters
+        run: |
+          echo "Testing foundation parameter access..."
+          
+          STATE_BUCKET=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/s3-state-bucket" --query Parameter.Value --output text)
+          DYNAMODB_TABLE=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/dynamodb-lock-table" --query Parameter.Value --output text)
+          OIDC_PROVIDER=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/oidc-provider" --query Parameter.Value --output text)
+          
+          echo "✓ State bucket: $STATE_BUCKET"
+          echo "✓ DynamoDB table: $DYNAMODB_TABLE"  
+          echo "✓ OIDC provider: $OIDC_PROVIDER"
+          
+          # Test S3 access
+          aws s3 ls "s3://$STATE_BUCKET" && echo "✓ S3 access confirmed"
+          
+          # Test DynamoDB access
+          aws dynamodb describe-table --table-name "$DYNAMODB_TABLE" --query 'Table.TableName' --output text && echo "✓ DynamoDB access confirmed"
+          
+          echo "🚀 All foundation resources accessible via OIDC role"

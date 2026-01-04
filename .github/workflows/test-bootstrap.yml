@@ -1,0 +1,53 @@
+name: Test Bootstrap Process
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_scenario:
+        description: 'Test scenario'
+        required: true
+        default: 'with_variable'
+        type: choice
+        options:
+        - with_variable
+        - without_variable
+
+jobs:
+  test-bootstrap:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS CLI
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: us-east-1
+        role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/gharole-foundation-iam-deploy-roles-prd
+        role-session-name: test-bootstrap-${{ github.run_id }}
+      if: inputs.test_scenario == 'with_variable'
+    
+    - name: Test Prerequisites Check
+      run: |
+        echo "Testing scenario: ${{ inputs.test_scenario }}"
+        if [ "${{ inputs.test_scenario }}" = "without_variable" ]; then
+          echo "Simulating missing AWS_ACCOUNT_ID variable"
+          unset AWS_ACCOUNT_ID
+        fi
+        ./scripts/verify-prerequisites.sh
+      continue-on-error: true
+    
+    - name: Test Deploy Script (Dry Run)
+      run: |
+        echo "Testing deploy script behavior..."
+        if [ "${{ inputs.test_scenario }}" = "without_variable" ]; then
+          echo "Expected: Should fail with bootstrap message"
+          unset AWS_ACCOUNT_ID
+        fi
+        # Just run prerequisites, don't actually deploy
+        ./scripts/verify-prerequisites.sh
+      continue-on-error: true

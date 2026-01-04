@@ -1,0 +1,52 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/terraform-deployment-roles-${{ vars.AWS_ACCOUNT_ID }}-us-east-1
+          aws-region: us-east-1
+          
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        
+      - name: Get backend configuration
+        id: backend
+        run: |
+          STATE_BUCKET=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/s3-state-bucket" --query Parameter.Value --output text)
+          DYNAMODB_TABLE=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/dynamodb-lock-table" --query Parameter.Value --output text)
+          GITHUB_REPO=$(echo "${{ github.repository }}" | tr '/' '-')
+          BACKEND_KEY="deployment-roles/${GITHUB_REPO}/terraform.tfstate"
+          
+          echo "state_bucket=$STATE_BUCKET" >> $GITHUB_OUTPUT
+          echo "dynamodb_table=$DYNAMODB_TABLE" >> $GITHUB_OUTPUT
+          echo "backend_key=$BACKEND_KEY" >> $GITHUB_OUTPUT
+          
+      - name: Initialize OpenTofu
+        run: |
+          tofu init \
+            -backend-config="bucket=${{ steps.backend.outputs.state_bucket }}" \
+            -backend-config="key=${{ steps.backend.outputs.backend_key }}" \
+            -backend-config="region=us-east-1" \
+            -backend-config="dynamodb_table=${{ steps.backend.outputs.dynamodb_table }}" \
+            -reconfigure
+        
+      - name: Plan deployment
+        run: tofu plan -out=tfplan
+        
+      - name: Apply deployment
+        run: tofu apply tfplan

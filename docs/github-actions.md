@@ -23,38 +23,38 @@ Enables automated deployment through GitHub Actions using OIDC authentication wh
 ### Phase 1: Local First Deployment
 
 ```text
-Developer    deploy.sh    verify-prereq.sh    AWS STS    GitHub API    Infrastructure
-    |           |              |              |           |               |
-    |--run----->|              |              |           |               |
-    |           |--call------->|              |           |               |
-    |           |              |--check gh--->|           |               |
-    |           |              |--check aws-->|           |               |
-    |           |<--pass-------|              |           |               |
-    |           |--get-account--------------->|           |               |
-    |           |<--account-id----------------|           |               |
-    |           |--get/set var--------------------------->|               |
-    |           |<--var updated---------------------------|               |
-    |           |--assume role--------------->|           |               |
-    |           |--deploy-------------------------------->|               |
-    |           |<--success-------------------------------|               |
-    |<--done----|              |              |           |               |
+Developer    deploy.sh    verify-prereq.sh    AWS STS    GitHub API 
+    |           |              |              |           |               
+    |--run----->|              |              |           |               
+    |           |--call------->|              |           |               
+    |           |              |--check gh--->|           |               
+    |           |              |--check aws-->|           |               
+    |           |<--pass-------|              |           |               
+    |           |--get-account--------------->|           |               
+    |           |<--account-id----------------|           |               
+    |           |--get/set var--------------------------->|               
+    |           |<--var updated---------------------------|               
+    |           |--assume role--------------->|           |               
+    |           |--deploy-------------------------------->|               
+    |           |<--success-------------------------------|               
+    |<--done----|              |              |           |               
 ```
 
 ### Phase 2: GitHub Actions Deployment
 
 ```text
-GH Workflow  deploy.sh    verify-prereq.sh     OIDC       Foundation     Infrastructure
-    |             |              |               |           Role            |
-    |--trigger--->|              |               |           |               |
-    |             |--call------->|               |           |               |
-    |             |              |--check tools->|           |               |
-    |             |<--pass-------|               |           |               |
-    |--read var-->|              |               |           |               |
-    |--use OIDC----------------->|               |           |               |
-    |<--assume-------------------|-------------->|           |               |
-    |             |--deploy with assumed role--------------->|               |
-    |             |<--success--------------------------------|               |
-    |<--done------|              |               |           |               |
+GH Workflow  deploy.sh    verify-prereq.sh     OIDC       Foundation   
+    |             |              |               |           Role            
+    |--trigger--->|              |               |           |               
+    |             |--call------->|               |           |               
+    |             |              |--check tools->|           |               
+    |             |<--pass-------|               |           |               
+    |--read var-->|              |               |           |               
+    |--use OIDC----------------->|               |           |               
+    |<--assume-------------------|-------------->|           |               
+    |             |--deploy with assumed role--------------->|               
+    |             |<--success--------------------------------|               
+    |<--done------|              |               |           |               
 ```
 
 ## How It Works

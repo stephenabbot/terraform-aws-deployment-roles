@@ -121,12 +121,21 @@ if [ -n "${GITHUB_ACTIONS:-}" ]; then
 fi
 
 # Clear any stale DynamoDB locks before initialization
-aws dynamodb scan --table-name "$DYNAMODB_TABLE" --filter-expression "contains(LockID, :key)" --expression-attribute-values "{\":key\":{\"S\":\"$BACKEND_KEY\"}}" --query 'Items[].LockID.S' --output text 2>/dev/null | tr '\t' '\n' | while read -r lock_id; do
-  if [ -n "$lock_id" ]; then
-    echo "Clearing stale lock: $lock_id"
-    aws dynamodb delete-item --table-name "$DYNAMODB_TABLE" --key "{\"LockID\":{\"S\":\"$lock_id\"}}" 2>/dev/null || true
+echo "Clearing any stale DynamoDB locks..."
+if LOCK_IDS=$(aws dynamodb scan --table-name "$DYNAMODB_TABLE" --filter-expression "contains(LockID, :key)" --expression-attribute-values "{\":key\":{\"S\":\"$BACKEND_KEY\"}}" --query 'Items[].LockID.S' --output text 2>/dev/null); then
+  if [ -n "$LOCK_IDS" ]; then
+    echo "$LOCK_IDS" | tr '\t' '\n' | while read -r lock_id; do
+      if [ -n "$lock_id" ]; then
+        echo "Clearing stale lock: $lock_id"
+        aws dynamodb delete-item --table-name "$DYNAMODB_TABLE" --key "{\"LockID\":{\"S\":\"$lock_id\"}}" 2>/dev/null || true
+      fi
+    done
+  else
+    echo "No stale locks found"
   fi
-done
+else
+  echo "Could not scan for locks (table may not exist yet)"
+fi
 
 # Debug the tofu init command in GitHub Actions
 if [ -n "${GITHUB_ACTIONS:-}" ]; then

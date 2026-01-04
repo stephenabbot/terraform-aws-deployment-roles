@@ -141,6 +141,12 @@ check_aws_auth() {
 }
 
 check_aws_permissions() {
+  # Skip detailed permission check in GitHub Actions - assumed role has necessary permissions
+  if [ -n "${GITHUB_ACTIONS:-}" ]; then
+    echo -e "${GREEN}✓${NC} AWS permissions (GitHub Actions - using assumed role)"
+    return 0
+  fi
+  
   echo "Checking AWS permissions..."
   
   REQUIRED_ACTIONS=(

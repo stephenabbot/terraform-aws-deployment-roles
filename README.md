@@ -46,6 +46,10 @@ Creates IAM roles with repository-scoped OIDC trust policies and publishes role 
 - Establishes consistent tagging and naming conventions across deployment infrastructure
 - Implements automated prerequisite validation and backend configuration management
 
+## GitHub Actions Integration
+
+Supports automated deployment through GitHub Actions using OIDC authentication with local-first configuration management. See [GitHub Actions documentation](docs/github-actions.md) for complete workflow setup and deployment patterns.
+
 ## Quick Start
 
 Basic deployment workflow:

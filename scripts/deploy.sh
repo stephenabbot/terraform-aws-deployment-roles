@@ -25,7 +25,7 @@ echo ""
 echo "Step 2: Managing GitHub repository configuration..."
 
 # Only manage GitHub variables when running locally (not in GitHub Actions)
-if [ -z "$GITHUB_ACTIONS" ]; then
+if [ -z "${GITHUB_ACTIONS:-}" ]; then
   # Get current AWS account ID
   CURRENT_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "")
   

@@ -27,7 +27,7 @@ jobs:
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
-          tofu_version: 1.8.1
+          tofu_version: 1.10.7
 
       - name: Verify prerequisites
         run: ./scripts/verify-prerequisites.sh

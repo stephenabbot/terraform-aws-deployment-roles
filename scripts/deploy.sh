@@ -109,17 +109,6 @@ echo "  Key: $BACKEND_KEY"
 echo ""
 echo "Step 5: Initializing Terraform..."
 
-# Debug info for GitHub Actions
-if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  echo "Debug: Running in GitHub Actions"
-  echo "Debug: tofu version:"
-  tofu version || echo "tofu version failed"
-  echo "Debug: which tofu:"
-  which tofu || echo "which tofu failed"
-  echo "Debug: PATH: $PATH"
-  echo "Debug: TOFU_CLI_PATH: ${TOFU_CLI_PATH:-not set}"
-fi
-
 # Clear any stale DynamoDB locks before initialization
 echo "Clearing any stale DynamoDB locks..."
 if LOCK_IDS=$(aws dynamodb scan --table-name "$DYNAMODB_TABLE" --filter-expression "contains(LockID, :key)" --expression-attribute-values "{\":key\":{\"S\":\"$BACKEND_KEY\"}}" --query 'Items[].LockID.S' --output text 2>/dev/null); then
@@ -137,25 +126,12 @@ else
   echo "Could not scan for locks (table may not exist yet)"
 fi
 
-# Debug the tofu init command in GitHub Actions
-if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  echo "Debug: About to run tofu init with backend config"
-  echo "Debug: Current directory: $(pwd)"
-  echo "Debug: Files in current directory:"
-  ls -la
-  echo "Debug: Running tofu init command..."
-fi
-
 tofu init \
   -backend-config="bucket=$STATE_BUCKET" \
   -backend-config="key=$BACKEND_KEY" \
   -backend-config="region=us-east-1" \
   -backend-config="dynamodb_table=$DYNAMODB_TABLE" \
   -reconfigure
-
-if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  echo "Debug: tofu init completed with exit code: $?"
-fi
 
 # Step 6: Plan deployment
 echo ""

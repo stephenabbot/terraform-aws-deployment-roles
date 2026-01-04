@@ -255,6 +255,19 @@ check_bash_version() {
   fi
 }
 
+check_github_cli() {
+  if command -v gh &>/dev/null; then
+    GH_VERSION=$(gh --version | head -n1 | cut -d' ' -f3)
+    echo -e "${GREEN}✓${NC} GitHub CLI installed: $GH_VERSION"
+    return 0
+  else
+    echo -e "${RED}✗${NC} GitHub CLI not found"
+    echo "  Install GitHub CLI: https://cli.github.com/"
+    FAILURES+=("No GitHub CLI")
+    return 1
+  fi
+}
+
 # Run all checks
 check_git_repo
 check_git_uncommitted
@@ -263,6 +276,7 @@ check_git_detached_head
 check_git_upstream
 check_git_unpushed
 check_bash_version
+check_github_cli
 check_terraform
 check_aws_cli
 check_aws_auth

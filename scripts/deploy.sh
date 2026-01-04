@@ -109,6 +109,17 @@ echo "  Key: $BACKEND_KEY"
 echo ""
 echo "Step 5: Initializing Terraform..."
 
+# Debug info for GitHub Actions
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "Debug: Running in GitHub Actions"
+  echo "Debug: tofu version:"
+  tofu version || echo "tofu version failed"
+  echo "Debug: which tofu:"
+  which tofu || echo "which tofu failed"
+  echo "Debug: PATH: $PATH"
+  echo "Debug: TOFU_CLI_PATH: ${TOFU_CLI_PATH:-not set}"
+fi
+
 # Clear any stale DynamoDB locks before initialization
 aws dynamodb scan --table-name "$DYNAMODB_TABLE" --filter-expression "contains(LockID, :key)" --expression-attribute-values "{\":key\":{\"S\":\"$BACKEND_KEY\"}}" --query 'Items[].LockID.S' --output text 2>/dev/null | tr '\t' '\n' | while read -r lock_id; do
   if [ -n "$lock_id" ]; then

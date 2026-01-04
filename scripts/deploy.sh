@@ -56,24 +56,30 @@ fi
 
 echo ""
 echo "Step 3: Checking for foundation deployment role..."
-FOUNDATION_ROLE_ARN=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/deployment-roles-role-arn" --query Parameter.Value --output text 2>/dev/null || echo "")
 
-if [ -n "$FOUNDATION_ROLE_ARN" ]; then
-  echo "✓ Foundation deployment role found: $FOUNDATION_ROLE_ARN"
-  echo "  Attempting to assume role for deployment..."
-  
-  if TEMP_CREDS=$(aws sts assume-role --role-arn "$FOUNDATION_ROLE_ARN" --role-session-name "deployment-roles-$(date +%s)" --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text 2>/dev/null); then
-    export AWS_ACCESS_KEY_ID=$(echo "$TEMP_CREDS" | cut -f1)
-    export AWS_SECRET_ACCESS_KEY=$(echo "$TEMP_CREDS" | cut -f2)
-    export AWS_SESSION_TOKEN=$(echo "$TEMP_CREDS" | cut -f3)
-    echo "✓ Successfully assumed foundation deployment role"
+# Skip role assumption in GitHub Actions since we're already using the assumed role
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "ℹ️  Running in GitHub Actions with assumed role credentials"
+else
+  FOUNDATION_ROLE_ARN=$(aws ssm get-parameter --region us-east-1 --name "/terraform/foundation/deployment-roles-role-arn" --query Parameter.Value --output text 2>/dev/null || echo "")
+
+  if [ -n "$FOUNDATION_ROLE_ARN" ]; then
+    echo "✓ Foundation deployment role found: $FOUNDATION_ROLE_ARN"
+    echo "  Attempting to assume role for deployment..."
+    
+    if TEMP_CREDS=$(aws sts assume-role --role-arn "$FOUNDATION_ROLE_ARN" --role-session-name "deployment-roles-$(date +%s)" --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text 2>/dev/null); then
+      export AWS_ACCESS_KEY_ID=$(echo "$TEMP_CREDS" | cut -f1)
+      export AWS_SECRET_ACCESS_KEY=$(echo "$TEMP_CREDS" | cut -f2)
+      export AWS_SESSION_TOKEN=$(echo "$TEMP_CREDS" | cut -f3)
+      echo "✓ Successfully assumed foundation deployment role"
+    else
+      echo "⚠️  Failed to assume foundation role, using current credentials"
+      echo "  This is normal for local development with admin credentials"
+    fi
   else
-    echo "⚠️  Failed to assume foundation role, using current credentials"
+    echo "ℹ️  Foundation deployment role not found, using current credentials"
     echo "  This is normal for local development with admin credentials"
   fi
-else
-  echo "ℹ️  Foundation deployment role not found, using current credentials"
-  echo "  This is normal for local development with admin credentials"
 fi
 
 # Step 4: Configure Terraform backend

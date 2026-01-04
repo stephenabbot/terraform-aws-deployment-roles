@@ -128,12 +128,25 @@ aws dynamodb scan --table-name "$DYNAMODB_TABLE" --filter-expression "contains(L
   fi
 done
 
+# Debug the tofu init command in GitHub Actions
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "Debug: About to run tofu init with backend config"
+  echo "Debug: Current directory: $(pwd)"
+  echo "Debug: Files in current directory:"
+  ls -la
+  echo "Debug: Running tofu init command..."
+fi
+
 tofu init \
   -backend-config="bucket=$STATE_BUCKET" \
   -backend-config="key=$BACKEND_KEY" \
   -backend-config="region=us-east-1" \
   -backend-config="dynamodb_table=$DYNAMODB_TABLE" \
   -reconfigure
+
+if [ -n "${GITHUB_ACTIONS:-}" ]; then
+  echo "Debug: tofu init completed with exit code: $?"
+fi
 
 # Step 6: Plan deployment
 echo ""
